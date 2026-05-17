@@ -67,6 +67,9 @@ def retrieve_context(query: str, collection, k: int = None) -> List[Dict]:
         for i in range(len(results["documents"][0])):
             distance = results["distances"][0][i]
             similarity = 1.0 - distance
+            #added similarity check
+            if similarity < config.SIMILARITY_THRESHOLD:
+                continue
             chunks_with_scores.append({
                 "text": results["documents"][0][i],
                 "similarity_score": round(similarity, 4),
