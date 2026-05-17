@@ -1,0 +1,72 @@
+[
+    {
+        "id": 1,
+        "category": "answerable",
+        "question": "What is the bias-variance tradeoff in machine learning?",
+        "expected_hallucination_risk": "low",
+        "notes": "Well-covered in ML basics doc"
+    },
+    {
+        "id": 2,
+        "category": "answerable",
+        "question": "Who introduced the backpropagation algorithm and in what year?",
+        "expected_hallucination_risk": "low",
+        "notes": "Stated in deep learning history doc - Rumelhart, Hinton, Williams 1986"
+    },
+    {
+        "id": 3,
+        "category": "answerable",
+        "question": "What is the difference between bagging and boosting in ensemble methods?",
+        "expected_hallucination_risk": "low",
+        "notes": "Covered in ML basics doc"
+    },
+    {
+        "id": 4,
+        "category": "partially_answerable",
+        "question": "How many parameters does BERT-large have and when was it released?",
+        "expected_hallucination_risk": "medium",
+        "notes": "BERT-large 340M params is in DL doc. Release year is 2018, which is in the doc but the exact date is not mentioned"
+    },
+    {
+        "id": 5,
+        "category": "partially_answerable",
+        "question": "What are the top-3 most effective techniques to reduce RAG hallucinations?",
+        "expected_hallucination_risk": "medium",
+        "notes": "Some info about hallucination detection exists but no ranked list of techniques"
+    },
+    {
+        "id": 6,
+        "category": "partially_answerable",
+        "question": "Compare the architecture of LeNet-5 and AlexNet. What were their key innovations?",
+        "expected_hallucination_risk": "medium",
+        "notes": "Separate info about each exists but no direct comparison"
+    },
+    {
+        "id": 7,
+        "category": "partially_answerable",
+        "question": "What hyperparameters should be tuned for optimal RAG performance?",
+        "expected_hallucination_risk": "medium",
+        "notes": "General hyperparameter tuning mentioned but no RAG-specific params listed"
+    },
+    {
+        "id": 8,
+        "category": "unanswerable",
+        "question": "What is the exact training cost of GPT-4 in millions of dollars?",
+        "expected_hallucination_risk": "high",
+        "notes": "Not mentioned in any document. Model might guess $100M+ but not in sources"
+    },
+    {
+        "id": 9,
+        "category": "unanswerable",
+        "question": "Who developed the Mixture of Experts architecture for transformers and when?",
+        "expected_hallucination_risk": "high",
+        "notes": "Not in source docs. Some info about transformers but no MoE mention"
+    },
+    {
+        "id": 10,
+        "category": "unanswerable",
+        "question": "What is the exact error rate improvement from using RAG versus fine-tuning on legal document analysis?",
+        "expected_hallucination_risk": "high",
+        "notes": "No such comparison in any document"
+    }
+]
