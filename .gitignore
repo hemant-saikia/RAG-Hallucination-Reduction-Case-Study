@@ -15,6 +15,9 @@ chroma_db/
 # SQLite observability database
 observability.db
 
+# Generated export files
+exports/
+
 # IDE
 .idea/
 .vscode/
