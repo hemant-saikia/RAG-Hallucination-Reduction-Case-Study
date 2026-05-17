@@ -5,7 +5,7 @@ import numpy as np
 from groq import Groq
 import config
 
-PROMPT_TEMPLATE = """Use the following pieces of context to answer the question at the end. 
+PROMPT_v1 = """Use the following pieces of context to answer the question at the end. 
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
 {context}
@@ -13,6 +13,19 @@ If you don't know the answer, just say that you don't know, don't try to make up
 Question: {question}
 Helpful Answer:"""
 
+PROMPT_TEMPLATE = """You are a helpful assistant answering questions based solely on the provided context.
+
+Context:
+{context}
+
+Instructions:
+- Answer ONLY using information from the context above
+- Quote specific phrases from the context using "..." 
+- If the context doesn't contain enough information, say "I don't have enough information to answer this confidently"
+- Never invent facts not present in the context
+
+Question: {question}
+Answer:"""
 
 def chunk_document(text: str, chunk_size: int = None) -> List[str]:
     if chunk_size is None:
