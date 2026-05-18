@@ -185,7 +185,8 @@ with tab_chat:
         t0 = time.time()
         chunks = retrieve_context(prompt, collection)
         log_retrieval(query_id, chunks)
-        answer = generate_answer(prompt, chunks)
+        answer_obj = generate_answer(prompt, chunks)
+        answer = answer_obj.answer
         latency_ms = (time.time() - t0) * 1000
         log_response(query_id, answer, latency_ms)
 
@@ -258,16 +259,17 @@ with tab_metrics:
         st.subheader("Hallucination Rate (Last 50 Queries)")
         df_recent = get_recent_queries(limit=50)
         if not df_recent.empty and "hallucination_detected" in df_recent.columns and "timestamp" in df_recent.columns:
-            df_plot = df_recent.copy()
             try:
-                df_plot["timestamp"] = pd.to_datetime(df_plot["timestamp"])
+                df_plot = df_recent.assign(timestamp=pd.to_datetime(df_recent["timestamp"]))
             except Exception:
-                df_plot["timestamp"] = pd.to_datetime(df_plot["timestamp"], errors="coerce")
+                df_plot = df_recent.assign(timestamp=pd.to_datetime(df_recent["timestamp"], errors="coerce"))
             df_plot = df_plot.dropna(subset=["timestamp"]).sort_values("timestamp")
             if df_plot.empty:
                 st.info("No valid timestamp data to plot.")
             else:
-                df_plot["rolling_rate"] = df_plot["hallucination_detected"].rolling(5, min_periods=1).mean()
+                df_plot = df_plot.assign(
+                    rolling_rate=df_plot["hallucination_detected"].rolling(5, min_periods=1).mean()
+                )
                 fig = px.line(
                     df_plot,
                     x="timestamp",
@@ -321,16 +323,22 @@ with tab_metrics:
             display_cols = ["timestamp", "query_text", "hallucination_score", "hallucination_detected", "total_latency_ms"]
             df_display = df_recent[[c for c in display_cols if c in df_recent.columns]].copy()
             if "hallucination_detected" in df_display.columns:
-                df_display["hallucination_detected"] = df_display["hallucination_detected"].map(
-                    {1: "\U0001f6a8 Yes", 0: "\u2705 No"}
+                df_display = df_display.assign(
+                    hallucination_detected=df_display["hallucination_detected"].map(
+                        {1: "\U0001f6a8 Yes", 0: "\u2705 No"}
+                    )
                 )
             if "timestamp" in df_display.columns:
                 try:
-                    df_display["timestamp"] = pd.to_datetime(df_display["timestamp"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
+                    df_display = df_display.assign(
+                        timestamp=pd.to_datetime(df_display["timestamp"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M")
+                    )
                 except Exception:
-                    df_display["timestamp"] = df_display["timestamp"].astype(str)
+                    df_display = df_display.assign(timestamp=df_display["timestamp"].astype(str))
             if "total_latency_ms" in df_display.columns:
-                df_display["Latency (s)"] = (df_display["total_latency_ms"] / 1000).round(2)
+                df_display = df_display.assign(
+                    **{"Latency (s)": (df_display["total_latency_ms"] / 1000).round(2)}
+                )
                 df_display = df_display.drop(columns=["total_latency_ms"])
             st.dataframe(df_display, use_container_width=True)
 
@@ -416,7 +424,7 @@ with tab_inspector:
                     "query_id": details["query_id"],
                     "timestamp": details["timestamp"],
                     "query_text": details["query_text"],
-                    "response_text": details["response_text"][:500],
+                    "response_text": (details["response_text"] or "")[:500],
                     "total_latency_ms": details.get("total_latency_ms"),
                     "num_chunks_retrieved": len(retrievals),
                     "evaluation": {

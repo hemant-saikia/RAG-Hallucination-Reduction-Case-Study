@@ -1,17 +1,55 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 import chromadb
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from groq import Groq
+import json
 import config
+from pydantic import BaseModel, Field, model_validator
 
-PROMPT_TEMPLATE = """Use the following pieces of context to answer the question at the end. 
-If you don't know the answer, just say that you don't know, don't try to make up an answer.
+PROMPT_TEMPLATE = """You are a helpful assistant answering questions based on provided context.
 
+Context:
 {context}
 
 Question: {question}
-Helpful Answer:"""
+
+Instructions:
+1. Answer the question using ONLY the context above
+2. Rate your confidence in this answer (0.0-1.0):
+   - 1.0 = Completely certain, all facts from context
+   - 0.7 = Confident, mostly supported by context
+   - 0.5 = Uncertain, partial information available
+   - 0.3 = Low confidence, context is vague/contradictory
+   - 0.0 = Cannot answer, no relevant information
+
+Respond in this exact JSON format:
+{{
+  "answer": "your answer here",
+  "confidence": 0.85,
+  "reasoning": "why this confidence level",
+  "sources_used": ["quote from chunk 1", "quote from chunk 2"]
+}}
+"""
+
+
+class LLMResponse(BaseModel):
+    answer: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str
+    sources_used: List[str]
+
+    @model_validator(mode="after")
+    def enforce_low_confidence(self):
+        if self.confidence < 0.6:
+            self.answer = "I do not know"
+        return self
+
+
+def parse_llm_response(raw: str) -> LLMResponse:
+    cleaned = raw.strip().strip("```").strip("json").strip()
+    data = json.loads(cleaned)
+    return LLMResponse(**data)
 
 
 def chunk_document(text: str, chunk_size: int = None) -> List[str]:
@@ -75,7 +113,7 @@ def retrieve_context(query: str, collection, k: int = None) -> List[Dict]:
     return chunks_with_scores
 
 
-def generate_answer(query: str, context_chunks: List[Dict]) -> str:
+def generate_answer(query: str, context_chunks: List[Dict]) -> LLMResponse:
     context_text = "\n\n".join([c["text"] for c in context_chunks])
     prompt = PROMPT_TEMPLATE.format(context=context_text, question=query)
     client = Groq(api_key=config.GROQ_API_KEY)
@@ -85,4 +123,5 @@ def generate_answer(query: str, context_chunks: List[Dict]) -> str:
         temperature=0.0,
         max_tokens=512
     )
-    return response.choices[0].message.content
+    raw = response.choices[0].message.content
+    return parse_llm_response(raw)
