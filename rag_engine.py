@@ -4,6 +4,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from groq import Groq
 import config
+from nltk import sent_tokenize
 
 PROMPT_TEMPLATE = """Use the following pieces of context to answer the question at the end. 
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
@@ -14,7 +15,7 @@ Question: {question}
 Helpful Answer:"""
 
 
-def chunk_document(text: str, chunk_size: int = None) -> List[str]:
+def chunk_document_static(text: str, chunk_size: int = None) -> List[str]:
     if chunk_size is None:
         chunk_size = config.CHUNK_SIZE
     chunks = []
@@ -25,6 +26,23 @@ def chunk_document(text: str, chunk_size: int = None) -> List[str]:
         start = end
     return chunks
 
+# semantic chunking
+def chunk_document(text, target_size=500):
+    sentences = sent_tokenize(text)
+    chunks = []
+    current = []
+    current_len = 0
+    
+    for sent in sentences:
+        if current_len + len(sent) > target_size and current:
+            chunks.append(' '.join(current))
+            current = [sent]
+            current_len = len(sent)
+        else:
+            current.append(sent)
+            current_len += len(sent)
+    
+    return chunks
 
 def get_embedding_model():
     return SentenceTransformer(config.EMBEDDING_MODEL)
